@@ -18,7 +18,6 @@ add_library(SecurityAgentTestLib
 find_package(securityagent CONFIG REQUIRED)
 
 target_link_libraries(${PROJECT_NAME}
-    securityagent::securityagent
     ${CMAKE_DL_LIBS}
 )
 
