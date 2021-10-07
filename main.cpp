@@ -1,39 +1,46 @@
-#include <string>
-#include <vector>
-#include <cstdint>
-#include <cstring>
+#include <memory>
 #include <iostream>
-
-#include <WPEFramework/securityagent/securityagent.h>
+#include <dlfcn.h>
 
 int main(int argc, char const *argv[])
 {
-    const size_t maxPayloadSize = 2048;
-    const std::string payload = "http://localhost";
-    const size_t inputLength = std::min(maxPayloadSize, payload.length());
+    const char* path = "./libSecurityAgentTestLib.so";
+    std::cout << "Loading library from " << path << "\n";
+    void* handle = dlopen(path, RTLD_LAZY);
 
-    std::vector<uint8_t> buffer;
-    buffer.resize(maxPayloadSize);
-
-    memcpy(buffer.data(), payload.c_str(), inputLength);
-    int tokenLength;
-
-    if ((tokenLength = GetToken(maxPayloadSize, inputLength, buffer.data())) < 0)
+    if (!handle)
     {
-        std::cerr << "Failed to generate token\n";
+        std::cerr << "Failed to dlopen() lib with error: " << dlerror() << "\n";
+        return 1;
+    }
+    else
+    {
+        std::cout << "Successfully loaded library from " << path << "\n";
+    }
+
+    // reset errors
+    dlerror();
+
+    typedef void (*generate_token_t)();
+    generate_token_t generateTokenFn = (generate_token_t) dlsym(handle, "GenerateToken");
+
+    const char *dlsym_error = dlerror();
+    if (dlsym_error) {
+        std::cerr << "Cannot load symbol 'hello': " << dlsym_error << '\n';
+        dlclose(handle);
         return 1;
     }
 
-    if (tokenLength < 0)
+    if (!generateTokenFn)
     {
-        std::cerr << "Token length is 0\n";
+        std::cerr << "ctor not found\n";
         return 1;
     }
 
-    std::string token(reinterpret_cast<const char *>(buffer.data()), tokenLength);
-    std::cout << "Generated token successfully: " << token << "\n";
+    generateTokenFn();
 
-    securityagent_dispose();
+    std::cout << "Closing library...\n";
+    dlclose(handle);
 
     return 0;
 }
