@@ -26,14 +26,14 @@ int main(int argc, char const *argv[])
 
     const char *dlsym_error = dlerror();
     if (dlsym_error) {
-        std::cerr << "Cannot load symbol 'hello': " << dlsym_error << '\n';
+        std::cerr << "Cannot load symbol 'GenerateToken': " << dlsym_error << '\n';
         dlclose(handle);
         return 1;
     }
 
     if (!generateTokenFn)
     {
-        std::cerr << "ctor not found\n";
+        std::cerr << "function is null?\n";
         return 1;
     }
 
